@@ -846,3 +846,51 @@ class DBaaSInstanceMigrate(DBaaSAPINotification):
     @abc.abstractmethod
     def required_start_traits(self):
         return ['host']
+
+
+class DBaaSMetadataCreate(DBaaSAPINotification):
+
+    @abc.abstractmethod
+    def event_type(self):
+        return 'metadata_create'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return ['resource_type', 'resource_id', 'key', 'value']
+
+    @abc.abstractmethod
+    def required_end_traits(self):
+        return ['resource_id']
+
+
+class DBaaSResourceMetadatasDelete(DBaaSAPINotification):
+
+    @abc.abstractmethod
+    def event_type(self):
+        return 'resource_metadata_delete'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return ['resource_id']
+
+
+class DBaaSMetadataDelete(DBaaSAPINotification):
+
+    @abc.abstractmethod
+    def event_type(self):
+        return 'metadata_delete'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return ['id']
+
+
+class DBaaSMetadataUpdate(DBaaSAPINotification):
+
+    @abc.abstractmethod
+    def event_type(self):
+        return 'metadata_update'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return ['id']
