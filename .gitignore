@@ -1,3 +1,4 @@
+.idea/
 vagrant/
 *.pyc
 trove_test.sqlite

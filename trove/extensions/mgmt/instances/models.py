@@ -209,23 +209,21 @@ class NotificationTransformer(object):
         return datastore_manager_id
 
     def transform_instance(self, instance, audit_start, audit_end):
-        payload = {
-            'audit_period_beginning': audit_start,
-            'audit_period_ending': audit_end,
-            'created_at': instance.created,
-            'display_name': instance.name,
-            'instance_id': instance.id,
-            'instance_name': instance.name,
-            'instance_type_id': instance.flavor_id,
-            'launched_at': instance.created,
-            'nova_instance_id': instance.server_id,
-            'region': CONF.region,
-            'state_description': instance.status.lower(),
-            'state': instance.status.lower(),
-            'tenant_id': instance.tenant_id
-        }
-        payload['service_id'] = self._get_service_id(
-            instance.datastore_version.manager, CONF.notification_service_id)
+        payload = {'audit_period_beginning': audit_start,
+                   'audit_period_ending': audit_end,
+                   'created_at': instance.created,
+                   'display_name': instance.name, 'instance_id': instance.id,
+                   'instance_name': instance.name,
+                   'instance_type_id': instance.flavor_id,
+                   'launched_at': instance.created,
+                   'nova_instance_id': instance.server_id,
+                   'region': CONF.region,
+                   'state_description': instance.status.lower(),
+                   'state': instance.status.lower(),
+                   'tenant_id': instance.tenant_id,
+                   'service_id': self._get_service_id(
+                       instance.datastore_version.manager,
+                       CONF.notification_service_id)}
         return payload
 
     def __call__(self):

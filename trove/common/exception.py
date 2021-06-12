@@ -714,3 +714,15 @@ class LogAccessForbidden(Forbidden):
 class LogsNotAvailable(Forbidden):
 
     message = _("Log actions are not supported.")
+
+
+class MetadataCreationError(TroveError):
+    message = _("Unable to create Metadata.")
+
+
+class MetadataNotFound(NotFound):
+    message = _("Metadata with id '%(id)s' cannot be found.")
+
+
+class MetadataForResourceNotFound(NotFound):
+    message = _("Metadata with resource_id '%(resource_id)s' cannot be found.")

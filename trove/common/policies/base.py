@@ -50,6 +50,9 @@ PATH_LIMITS = PATH_BASE + '/limits'
 PATH_MODULES = PATH_BASE + '/modules'
 PATH_MODULE = PATH_MODULES + '/{module}'
 
+PATH_METADATAS = PATH_BASE + '/metadatas'
+PATH_METADATA = PATH_MODULES + '/{metadata_id}'
+
 rules = [
     policy.RuleDefault(
         'admin',

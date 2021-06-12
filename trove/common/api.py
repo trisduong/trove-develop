@@ -14,6 +14,7 @@
 
 import routes
 
+from trove.metadata.service import MetadataController
 from trove.backup.service import BackupController
 from trove.backup.service import BackupStrategyController
 from trove.cluster.service import ClusterController
@@ -43,6 +44,7 @@ class API(wsgi.Router):
         self._backup_strategy_router(mapper)
         self._configurations_router(mapper)
         self._modules_router(mapper)
+        self._metadata_router(mapper)
 
     def _versions_router(self, mapper):
         versions_resource = VersionsController().create_resource()
@@ -308,6 +310,33 @@ class API(wsgi.Router):
                        controller=configuration_resource,
                        action='delete',
                        conditions={'method': ['DELETE']})
+
+    def _metadata_router(self, mapper):
+        metadata_resource = MetadataController().create_resource()
+        mapper.connect("/{tenant_id}/metadatas",
+                       controller=metadata_resource,
+                       action="index",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/metadatas",
+                       controller=metadata_resource,
+                       action="create",
+                       conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/metadatas/{id}",
+                       controller=metadata_resource,
+                       action="show",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/metadatas/{id}",
+                       controller=metadata_resource,
+                       action="delete",
+                       conditions={'method': ['DELETE']})
+        mapper.connect("/{tenant_id}/metadatas/{resource_id}",
+                       controller=metadata_resource,
+                       action="delete_resource_metadatas",
+                       conditions={'method': ['DELETE']})
+        mapper.connect("/{tenant_id}/metadatas/{id}",
+                       controller=metadata_resource,
+                       action="edit",
+                       conditions={'method': ['PATCH']})
 
 
 def app_factory(global_conf, **local_conf):
