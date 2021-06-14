@@ -44,6 +44,11 @@ class MetadataController(wsgi.Controller):
         all_projects = strutils.bool_from_string(req.GET.get('all_projects'))
         context = req.environ[wsgi.CONTEXT_KEY]
 
+        if project_id or all_projects:
+            policy.authorize_on_tenant(context, 'metadata:index:all_projects')
+        else:
+            policy.authorize_on_tenant(context, 'metadata:index')
+
         metadatas, marker = Metadata.list(
             context,
             project_id=project_id,
@@ -63,7 +68,7 @@ class MetadataController(wsgi.Controller):
                   {'tenant_id': tenant_id, 'id': id})
         context = req.environ[wsgi.CONTEXT_KEY]
         metadata = Metadata.get_by_id(context, id)
-        policy.authorize_on_target(context, 'backup:show',
+        policy.authorize_on_target(context, 'metadata:show',
                                    {'tenant': metadata.tenant_id})
         return wsgi.Result(views.MetadataView(metadata).data(), 200)
 

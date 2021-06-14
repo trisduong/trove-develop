@@ -313,27 +313,27 @@ class API(wsgi.Router):
 
     def _metadata_router(self, mapper):
         metadata_resource = MetadataController().create_resource()
-        mapper.connect("/{tenant_id}/metadata",
+        mapper.connect("/{tenant_id}/metadatas",
                        controller=metadata_resource,
                        action="index",
                        conditions={'method': ['GET']})
-        mapper.connect("/{tenant_id}/metadata",
+        mapper.connect("/{tenant_id}/metadatas",
                        controller=metadata_resource,
                        action="create",
                        conditions={'method': ['POST']})
-        mapper.connect("/{tenant_id}/metadata/{id}",
+        mapper.connect("/{tenant_id}/metadatas/{id}",
                        controller=metadata_resource,
                        action="show",
                        conditions={'method': ['GET']})
-        mapper.connect("/{tenant_id}/metadata/{id}",
+        mapper.connect("/{tenant_id}/metadatas/{id}",
                        controller=metadata_resource,
                        action="delete",
                        conditions={'method': ['DELETE']})
-        mapper.connect("/{tenant_id}/metadata/{resource_id}",
+        mapper.connect("/{tenant_id}/metadatas/{resource_id}",
                        controller=metadata_resource,
                        action="delete_resource_metadatas",
                        conditions={'method': ['DELETE']})
-        mapper.connect("/{tenant_id}/metadata/{id}",
+        mapper.connect("/{tenant_id}/metadatas/{id}",
                        controller=metadata_resource,
                        action="edit",
                        conditions={'method': ['PATCH']})

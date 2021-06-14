@@ -144,7 +144,7 @@ class Metadata(object):
         if project_id:
             filters.append(DBMetadata.tenant_id == project_id)
         elif not all_projects:
-            filters.append(DBMetadata.tenant_id == context.project_id)
+            filters.append(DBMetadata.all_projects == context.all_projects)
 
         if resource_id:
             filters.append(DBMetadata.resource_id == resource_id)
