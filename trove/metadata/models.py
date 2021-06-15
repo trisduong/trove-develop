@@ -38,10 +38,14 @@ LOG = logging.getLogger(__name__)
 
 class DBMetadata(DatabaseModelBase):
     """A table for metadata records."""
-    _data_fields = ['id', 'resource_type', 'resource_id', 'project_id',
-                    'key', 'value', 'created_at', 'deleted',
-                    'deleted_at', 'updated_at']
+    _data_fields = ['id', 'resource_type', 'resource_id', 'tenant_id',
+                    'key', 'value', 'created', 'deleted',
+                    'deleted_at', 'updated']
     _table_name = 'metadata'
+
+
+def persisted_models():
+        return {'metadata': DBMetadata}
 
 
 class Metadata(object):
@@ -60,24 +64,21 @@ class Metadata(object):
         :return:
         """
 
-        def _create_resources():
-            try:
-                db_info = DBMetadata.create(
-                    resource_type=resource_type,
-                    resource_id=resource_id,
-                    tenant_id=context.project_id,
-                    key=key,
-                    value=value
-                )
-            except exception.InvalidModelError as ex:
-                LOG.exception("Unable to create metadata record for "
-                              "resource: %s with id: %s", resource_type,
-                              resource_id)
-                raise exception.MetadataCreationError(str(ex))
+        try:
+            db_info = DBMetadata.create(
+                resource_type=resource_type,
+                resource_id=resource_id,
+                tenant_id=context.project_id,
+                key=key,
+                value=value
+            )
+        except exception.InvalidModelError as ex:
+            LOG.exception("Unable to create metadata record for "
+                          "resource: %s with id: %s", resource_type,
+                          resource_id)
+            raise exception.MetadataCreationError(str(ex))
 
-            return db_info
-
-        return _create_resources
+        return db_info
 
     @classmethod
     def get_by_id(cls, context, id, deleted=False):
@@ -144,7 +145,7 @@ class Metadata(object):
         if project_id:
             filters.append(DBMetadata.tenant_id == project_id)
         elif not all_projects:
-            filters.append(DBMetadata.all_projects == context.all_projects)
+            filters.append(DBMetadata.tenant_id == context.project_id)
 
         if resource_id:
             filters.append(DBMetadata.resource_id == resource_id)
@@ -228,3 +229,4 @@ class Metadata(object):
             query.update(data)
 
         return _update_resources
+

@@ -26,6 +26,7 @@ from trove.common.policies import modules
 from trove.common.policies import root
 from trove.common.policies import user_access
 from trove.common.policies import users
+from trove.common.policies import metadatas
 
 
 def list_rules():
@@ -43,5 +44,6 @@ def list_rules():
         datastores.list_rules(),
         flavors.list_rules(),
         limits.list_rules(),
-        modules.list_rules()
+        modules.list_rules(),
+        metadatas.list_rules()
     )

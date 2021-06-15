@@ -78,6 +78,8 @@ def map(engine, models):
                Table('modules', meta, autoload=True))
     orm.mapper(models['instance_modules'],
                Table('instance_modules', meta, autoload=True))
+    orm.mapper(models['metadata'],
+               Table('metadata', meta, autoload=True))
 
 
 def mapping_exists(model):

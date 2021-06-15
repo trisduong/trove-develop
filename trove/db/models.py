@@ -33,11 +33,11 @@ class DatabaseModelBase(models.ModelBase):
     @classmethod
     def create(cls, **values):
         init_vals = {
-            'id': utils.generate_uuid(),
-            'created': timeutils.utcnow(),
+           'id': utils.generate_uuid(),
+           'created': timeutils.utcnow(),
         }
         if hasattr(cls, 'deleted'):
-            init_vals['deleted'] = False
+           init_vals['deleted'] = False
         init_vals.update(values)
         instance = cls(**init_vals)
         if not instance.is_valid():

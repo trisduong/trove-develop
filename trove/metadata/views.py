@@ -20,10 +20,9 @@ class MetadataView(object):
         self.metadata = metadata
 
     def data(self):
+        import pdb; pdb.set_trace()
         result = {
-            "metadata": {
-                list(self.metadata.keys())[0]: list(self.metadata.values())[0]
-            }
+            "metadata": {""}
         }
         return result
 
