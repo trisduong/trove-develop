@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 from oslo_log import log as logging
 
 from neutronclient.common import exceptions as neutron_exceptions
@@ -40,6 +41,7 @@ from trove.common.strategies.cluster import strategy
 from trove.common import utils
 from trove.configuration import models as config_models
 from trove.datastore import models as datastore_models
+from trove.metadata import models as metadata_models
 from trove.db import models as dbmodels
 from trove.instance import models as inst_models
 from trove.instance.tasks import InstanceTasks
@@ -251,6 +253,15 @@ class Cluster(object):
                     self._server_group)
         return self._locality
 
+    @property
+    def metadata(self):
+        metadata = metadata_models.Metadata.get('clusters', self.id)
+
+        metadata_dict = {}
+        for key, value in metadata.items():
+            metadata_dict.update({key: json.loads(value)})
+        return metadata_dict
+
     @locality.setter
     def locality(self, value):
         """This is to facilitate the fact that the server group may not be
@@ -297,6 +308,20 @@ class Cluster(object):
         for db_inst in db_insts:
             instance = inst_models.load_any_instance(self.context, db_inst.id)
             instance.delete()
+
+            # Delete all metadata for instance
+            metadata_models.Metadata.delete_all_for_resource(
+                project_id=self.context.project_id,
+                resource_type="instances",
+                resource_id=db_inst.id
+            )
+
+        # Delete all metadata for cluster
+        metadata_models.Metadata.delete_all_for_resource(
+            project_id=self.context.project_id,
+            resource_type="clusters",
+            resource_id=self.id
+        )
 
         task_api.API(self.context).delete_cluster(self.id)
 

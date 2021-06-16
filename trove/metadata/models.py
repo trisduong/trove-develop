@@ -15,22 +15,11 @@
 """Model classes that form the core of snapshots functionality."""
 
 from oslo_log import log as logging
-from requests.exceptions import ConnectionError
-from sqlalchemy import desc
-from swiftclient.client import ClientException
+import json
 
-from trove.backup.state import BackupState
 from trove.common import cfg
-from trove.common import clients
-from trove.common import constants
 from trove.common import exception
-from trove.common import swift
-from trove.common import utils
-from trove.common.i18n import _
-from trove.datastore import models as datastore_models
 from trove.db.models import DatabaseModelBase
-from trove.quota.quota import run_with_quotas
-from trove.taskmanager import api
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -39,7 +28,16 @@ LOG = logging.getLogger(__name__)
 class Metadata(object):
 
     @classmethod
-    def list(cls, context, resource_type, resource_id):
+    def list(cls, resource_type, resource_id):
+        """
+        List All Metadata Records.
+        :param cls:
+        :param resource_type: TYPE of resource
+        :param resource_id: ID of resource
+
+        :return:
+        """
+
         query = DBMetadata.query()
         filters = [
             DBMetadata.deleted == 0,
@@ -48,100 +46,175 @@ class Metadata(object):
         ]
 
         query = query.filter(*filters)
-        return query
+        return query.all()
 
     @classmethod
-    def get(cls, context, resource_type, resource_id, key):
-        query = DBMetadata.query()
-        filters = [
-            DBMetadata.deleted == 0,
-            DBMetadata.resource_id == resource_id,
-            DBMetadata.resource_type == resource_type,
-            DBMetadata.key == key
-        ]
-
-        query = query.filter(*filters)
-        return query
-
-    @classmethod
-    def create(cls, context, resource_type, resource_id, key, value):
+    def get(cls, resource_type, resource_id, key):
         """
-        create db record for metadata
+        Show Metadata Item Details Records.
         :param cls:
-        :param context: project_id included
-        :param resource_type:
-        :param resource_id:
-        :param key:
-        :param value:
+        :param resource_type: TYPE of resource
+        :param resource_id: ID of resource
+        :param key: metadata key
 
         :return:
         """
 
         try:
-            db_info = DBMetadata.create(
+            return DBMetadata.find_by(
+                deleted=False,
+                resource_id=resource_id,
+                resource_type=resource_type,
+                key=key)
+
+        except exception.NotFound:
+            raise exception.MetadataKeyForResourceNotFound(
+                key=key,
+                resource_type=resource_type,
+                resource_id=resource_id)
+
+    @classmethod
+    def create(cls, project_id, resource_type, resource_id, data):
+        """
+        Create or Update Metadata Items Records.
+        :param cls:
+        :param project_id: project_id
+        :param resource_type: TYPE of resource
+        :param resource_id: ID of resource
+        :param data: metadata items
+
+        :return:
+        """
+
+        metadatas = []
+
+        for key, value in data.items():
+            try:
+                cls.get(
+                    resource_type=resource_type,
+                    resource_id=resource_id,
+                    key=key)
+                raise exception.MetadataKeyForResourceExist(
+                    key=key,
+                    resource_type=resource_type,
+                    resource_id=resource_id
+                )
+            except exception.NotFound:
+                metadatas.append(DBMetadata.create(
+                    resource_type=resource_type,
+                    resource_id=resource_id,
+                    project_id=project_id,
+                    key=key,
+                    value=json.dumps(value)
+                ))
+
+        return metadatas
+
+    @classmethod
+    def delete(cls, project_id, resource_type, resource_id, key):
+        """
+        Delete Metadata Item Records.
+        :param cls:
+        :param project_id: project_id
+        :param resource_type: TYPE of resource
+        :param resource_id: ID of resource
+        :param key: metadata key
+
+        :return:
+        """
+
+        query = DBMetadata.query()
+        query = query.filter_by(
+            resource_type=resource_type,
+            resource_id=resource_id,
+            project_id=project_id,
+            key=key,
+            deleted=False
+        )
+        return query.update({"deleted": True})
+
+    @classmethod
+    def delete_all_for_resource(cls, project_id, resource_type, resource_id):
+        """
+        Delete Metadata Item Records.
+        :param cls:
+        :param project_id: project_id
+        :param resource_type: TYPE of resource
+        :param resource_id: ID of resource
+
+        :return:
+        """
+
+        query = DBMetadata.query()
+        query = query.filter_by(
+            resource_type=resource_type,
+            resource_id=resource_id,
+            project_id=project_id,
+            deleted=False
+        )
+        return query.update({"deleted": True})
+
+    @classmethod
+    def edit(cls, project_id, resource_type, resource_id, key, value):
+        """
+        Create Or Update Metadata Item Records.
+        :param cls:
+        :param project_id: project_id
+        :param resource_type: TYPE of resource
+        :param resource_id: ID of resource
+        :param key: metadata key
+        :param value: metadata value
+
+        :return:
+        """
+
+        try:
+            cls.get(
                 resource_type=resource_type,
                 resource_id=resource_id,
-                tenant_id=context.project_id,
+                key=key
+            )
+
+            query = DBMetadata.query()
+            query = query.filter_by(
+                resource_type=resource_type,
+                resource_id=resource_id,
+                project_id=project_id,
+                key=key,
+                deleted=False
+            )
+            return query.update({"value": json.dumps(value)})
+
+        except exception.NotFound:
+            return DBMetadata.create(
+                resource_type=resource_type,
+                resource_id=resource_id,
+                project_id=project_id,
+                key=key,
+                value=json.dumps(value)
+            )
+
+    @classmethod
+    def update(cls, project_id, resource_type, resource_id, data):
+        """
+        Replace Metadata Items Records.
+        :param cls:
+        :param project_id: project_id
+        :param resource_type: TYPE of resource
+        :param resource_id: ID of resource
+        :param data: metadata items
+
+        :return:
+        """
+
+        for key, value in data.items():
+            cls.edit(
+                resource_type=resource_type,
+                resource_id=resource_id,
+                project_id=project_id,
                 key=key,
                 value=value
             )
-        except exception.InvalidModelError as ex:
-            LOG.exception("Unable to create metadata record for "
-                          "resource: %s with id: %s", resource_type,
-                          resource_id)
-            raise exception.MetadataCreationError(str(ex))
-
-        return db_info
-
-    @classmethod
-    def delete(cls, context, resource_type, resource_id, key):
-        """
-        update Metadata table on deleted flag for given Metadata
-        :param cls:
-        :param context: context containing the tenant id and token
-        :param resource_type: resource_type
-        :param resource_id: resource_id
-        :param key: key
-
-        :return:
-        """
-
-        query = DBMetadata.query()
-        query = query.filter_by(
-            resource_type=resource_type,
-            resource_id=resource_id,
-            key=key,
-            deleted=False
-        )
-        query.delete()
-
-        return
-
-    @classmethod
-    def edit(cls, context, resource_type, resource_id, key, value):
-        """
-        update Metadata table on deleted flag for given Metadata
-        :param cls:
-        :param context: context containing the tenant id and token
-        :param resource_type: resource_type
-        :param resource_id: resource_id
-        :param key: key
-        :param value: value
-
-        :return:
-        """
-
-        query = DBMetadata.query()
-        query = query.filter_by(
-            resource_type=resource_type,
-            resource_id=resource_id,
-            key=key,
-            deleted=False
-        )
-
-        metadata = query.update(value)
-
-        return metadata
 
 
 class DBMetadata(DatabaseModelBase):

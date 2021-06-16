@@ -14,6 +14,7 @@
 
 """Model classes that form the core of snapshots functionality."""
 
+import json
 from oslo_log import log as logging
 from requests.exceptions import ConnectionError
 from sqlalchemy import desc
@@ -336,6 +337,14 @@ class Backup(object):
             cls.verify_swift_auth_token(context)
             api.API(context).delete_backup(backup_id)
 
+
+            # Delete all metadata
+            metadata_models.Metadata.delete_all_for_resource(
+                project_id=context.project_id,
+                resource_type="backups",
+                resource_id=backup_id
+            )
+
         return run_with_quotas(context.project_id,
                                {'backups': -1},
                                _delete_resources)
@@ -454,6 +463,18 @@ class DBBackup(DatabaseModelBase):
         if self.datastore_version_id:
             return datastore_models.DatastoreVersion.load_by_uuid(
                 self.datastore_version_id)
+
+    @property
+    def metadata(self):
+        metadata_dict = {}
+        metadatas = metadata_models.Metadata.list(
+                resource_type='backups', 
+                resource_id=self.id
+        )
+
+        for metadata in metadatas:
+            metadata_dict.update({metadata.key: json.loads(metadata.value)})
+        return metadata_dict
 
     def check_swift_object_exist(self, context, verify_checksum=False):
         try:

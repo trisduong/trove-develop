@@ -35,6 +35,9 @@ class ConfigurationView(object):
             "datastore_version_name":
             self.configuration.datastore_version.name}
 
+        if self.configuration.metadata:
+            configuration_dict['metadata'] = self.configuration.metadata
+
         return {"configuration": configuration_dict}
 
 
@@ -108,6 +111,9 @@ class DetailedConfigurationView(object):
             "datastore_version_number":
                 self.configuration.datastore_version.version
         }
+
+        if self.configuration.metadata:
+            configuration_dict['metadata'] = self.configuration.metadata
 
         return {"configuration": configuration_dict}
 

@@ -32,7 +32,7 @@ class BackupView(object):
                 "size": self.backup.size,
                 "status": self.backup.state,
                 "parent_id": self.backup.parent_id,
-                "project_id": self.backup.tenant_id
+                "project_id": self.backup.tenant_id,
             }
         }
         if self.backup.datastore_version_id:
@@ -41,6 +41,9 @@ class BackupView(object):
                 "version": self.backup.datastore_version.name,
                 "version_id": self.backup.datastore_version.id
             }
+        if self.backup.metadata:
+            result['backup']['metadata'] = self.backup.metadata
+
         return result
 
 

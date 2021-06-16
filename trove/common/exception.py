@@ -716,13 +716,13 @@ class LogsNotAvailable(Forbidden):
     message = _("Log actions are not supported.")
 
 
-class MetadataCreationError(TroveError):
-    message = _("Unable to create Metadata.")
+class MetadataKeyForResourceExist(BadRequest):
+
+    message = _("Metadata key: %(key)s for %(resource_type)s with id: "
+                "%(resource_id)s existed.")
 
 
-class MetadataNotFound(NotFound):
-    message = _("Metadata with id '%(id)s' cannot be found.")
+class MetadataKeyForResourceNotFound(NotFound):
 
-
-class MetadataForResourceNotFound(NotFound):
-    message = _("Metadata with resource_id '%(resource_id)s' cannot be found.")
+    message = _("Metadata key: %(key)s for %(resource_type)s with id: "
+                "%(resource_id)s cannot be found.")
