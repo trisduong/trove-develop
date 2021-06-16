@@ -336,6 +336,13 @@ class Backup(object):
             cls.verify_swift_auth_token(context)
             api.API(context).delete_backup(backup_id)
 
+            # Delete all metadata
+            metadata_models.Metadata.delete(
+                project_id=context.project_id,
+                resource_type="backups",
+                resource_id=backup_id
+            )
+
         return run_with_quotas(context.project_id,
                                {'backups': -1},
                                _delete_resources)
@@ -454,6 +461,14 @@ class DBBackup(DatabaseModelBase):
         if self.datastore_version_id:
             return datastore_models.DatastoreVersion.load_by_uuid(
                 self.datastore_version_id)
+
+    @property
+    def metadata(self):
+        return metadata_models.Metadata.list(
+            resource_type='backups',
+            resource_id=self.id,
+            exclude=True
+        )
 
     def check_swift_object_exist(self, context, verify_checksum=False):
         try:

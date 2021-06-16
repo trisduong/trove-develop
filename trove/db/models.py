@@ -66,6 +66,7 @@ class DatabaseModelBase(models.ModelBase):
         return self.db_api.save(self)
 
     def delete(self):
+        import pdb; pdb.set_trace()
         self['updated'] = timeutils.utcnow()
         LOG.debug("Deleting %(name)s: %(dict)s",
                   {'name': self.__class__.__name__,

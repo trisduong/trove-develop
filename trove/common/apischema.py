@@ -205,7 +205,6 @@ user_attributes = {
     }
 }
 
-
 users_list = {
     "type": "array",
     "minItems": 0,
@@ -949,7 +948,6 @@ upgrade = {
     }
 }
 
-
 package_list = {
     "type": "array",
     "minItems": 0,
@@ -1025,10 +1023,12 @@ metadata = {
         "properties": {
             "metadata": {
                 "type": "object",
-                "required": ["key", "value"],
                 "properties": {
                     "key": non_empty_string,
-                    "value": non_empty_string,
+                    "value": {
+                        "minLength": 1,
+                        "maxLength": 255,
+                    }
                 }
             }
         }
@@ -1039,12 +1039,7 @@ metadata = {
         "required": ["metadata"],
         "properties": {
             "metadata": {
-                "type": "object",
-                "required": [],
-                "properties": {
-                    "key": non_empty_string,
-                    "value": non_empty_string
-                }
+                "type": "object"
             }
         }
     },
@@ -1054,8 +1049,7 @@ metadata = {
         "required": ["metadata"],
         "properties": {
             "metadata": {
-                "key": non_empty_string,
-                "value": non_empty_string
+                "type": "object"
             }
         }
     }

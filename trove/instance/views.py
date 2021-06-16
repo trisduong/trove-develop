@@ -42,6 +42,8 @@ class InstanceView(object):
             "region": self.instance.region_name,
             "access": {}
         }
+        if self.instance.metadata:
+            instance_dict['metadata'] = self.instance.metadata
         if self.instance.datastore_version:
             instance_dict['datastore'] = {
                 "type": self.instance.datastore.name,

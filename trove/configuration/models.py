@@ -26,6 +26,7 @@ from trove.common import utils
 from trove.datastore import models as dstore_models
 from trove.db import get_db_api
 from trove.db import models as dbmodels
+from trove.metadata import models as metadata_models
 
 
 CONF = cfg.CONF
@@ -108,6 +109,13 @@ class Configuration(object):
         group.deleted = True
         group.deleted_at = deleted_at
         group.save()
+
+        # Delete all metadata
+        metadata_models.Metadata.delete(
+            project_id=context.project_id,
+            resource_type="configurations",
+            resource_id=group.id
+        )
 
     @staticmethod
     def remove_all_items(context, id, deleted_at):
@@ -243,6 +251,14 @@ class DBConfiguration(dbmodels.DatabaseModelBase):
         datastore_version = dstore_models.DatastoreVersion.load_by_uuid(
             self.datastore_version_id)
         return datastore_version
+
+    @property
+    def metadata(self):
+        return metadata_models.Metadata.list(
+            resource_type='configurations',
+            resource_id=self.id,
+            exclude=True
+        )
 
 
 class DBConfigurationParameter(dbmodels.DatabaseModelBase):

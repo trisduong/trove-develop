@@ -856,11 +856,11 @@ class DBaaSMetadataCreate(DBaaSAPINotification):
 
     @abc.abstractmethod
     def required_start_traits(self):
-        return ['resource_type', 'resource_id', 'key', 'value']
+        return ['resource_type', 'resource_id', 'data']
 
     @abc.abstractmethod
     def required_end_traits(self):
-        return ['resource_type', 'resource_id', 'key']
+        return ['resource_type', 'resource_id', 'data']
 
 
 class DBaaSMetadataDelete(DBaaSAPINotification):
@@ -893,4 +893,4 @@ class DBaaSMetadataUpdate(DBaaSAPINotification):
 
     @abc.abstractmethod
     def required_start_traits(self):
-        return ['resource_type', 'resource_id']
+        return ['resource_type', 'resource_id', 'data']

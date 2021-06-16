@@ -55,6 +55,7 @@ from trove.module import models as module_models
 from trove.module import views as module_views
 from trove.quota.quota import run_with_quotas
 from trove.taskmanager import api as task_api
+from trove.metadata import models as metadata_models
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -217,6 +218,14 @@ class SimpleInstance(object):
 
     def __repr__(self, *args, **kwargs):
         return "%s(%s)" % (self.name, self.id)
+
+    @property
+    def metadata(self):
+        return metadata_models.Metadata.list(
+            resource_type='instances',
+            resource_id=self.db_info.id,
+            exclude=True
+        )
 
     @property
     def addresses(self):
@@ -618,6 +627,14 @@ def update_service_status(task_status, service_status, ins_id):
             srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT
 
 
+def load_metadata_info(db_info):
+    db_info.metadata = metadata_models.Metadata.list(
+        resource_type='instances',
+        resource_id=db_info.id,
+        exclude=True
+    )
+
+
 def load_instance_with_info(cls, context, ins_id, cluster_id=None):
     db_info = get_db_info(context, ins_id, cluster_id)
     service_status = InstanceServiceStatus.find_by(instance_id=ins_id)
@@ -627,6 +644,8 @@ def load_instance_with_info(cls, context, ins_id, cluster_id=None):
     load_simple_instance_server_status(context, db_info)
 
     load_simple_instance_addresses(context, db_info)
+
+    load_metadata_info(db_info)
 
     instance = cls(context, db_info, service_status)
 
@@ -724,6 +743,14 @@ class BaseInstance(SimpleInstance):
             self.update_db(task_status=InstanceTasks.DELETING,
                            configuration_id=None)
             task_api.API(self.context).delete_instance(self.id)
+
+            # Delete all metadata
+            metadata_models.Metadata.delete(
+                project_id=self.context.project_id,
+                resource_type="instances",
+                resource_id=self.id
+            )
+            
         flavor = self.get_flavor()
         deltas = {'instances': -1, 'ram': -flavor.ram}
         if self.volume_support:
