@@ -313,30 +313,31 @@ class API(wsgi.Router):
 
     def _metadata_router(self, mapper):
         metadata_resource = MetadataController().create_resource()
-        mapper.connect("/{tenant_id}/metadatas",
+        path = '/{tenant_id}/{resource_type}/{resource_id}/metadata'
+        mapper.connect(path,
                        controller=metadata_resource,
-                       action="index",
+                       action='index',
                        conditions={'method': ['GET']})
-        mapper.connect("/{tenant_id}/metadatas",
+        mapper.connect(path,
                        controller=metadata_resource,
-                       action="create",
+                       action='create',
                        conditions={'method': ['POST']})
-        mapper.connect("/{tenant_id}/metadatas/{id}",
+        mapper.connect(path,
                        controller=metadata_resource,
-                       action="show",
+                       action='update',
+                       conditions={'method': ['PUT']})
+        mapper.connect(path + '/{key}',
+                       controller=metadata_resource,
+                       action='show',
                        conditions={'method': ['GET']})
-        mapper.connect("/{tenant_id}/metadatas/{id}",
+        mapper.connect(path + '/{key}',
                        controller=metadata_resource,
-                       action="delete",
+                       action='delete',
                        conditions={'method': ['DELETE']})
-        mapper.connect("/{tenant_id}/metadatas/{resource_id}",
+        mapper.connect(path + '/{key}',
                        controller=metadata_resource,
-                       action="delete_resource_metadatas",
-                       conditions={'method': ['DELETE']})
-        mapper.connect("/{tenant_id}/metadatas/{id}",
-                       controller=metadata_resource,
-                       action="edit",
-                       conditions={'method': ['PATCH']})
+                       action='edit',
+                       conditions={'method': ['PUT']})
 
 
 def app_factory(global_conf, **local_conf):

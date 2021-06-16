@@ -1016,3 +1016,47 @@ mgmt_datastore_version = {
         }
     }
 }
+
+metadata = {
+    "create": {
+        "name": "metadata:create",
+        "type": "object",
+        "required": ["metadata"],
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "required": ["key", "value"],
+                "properties": {
+                    "key": non_empty_string,
+                    "value": non_empty_string,
+                }
+            }
+        }
+    },
+    "update": {
+        "name": "metadata:update",
+        "type": "object",
+        "required": ["metadata"],
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                    "key": non_empty_string,
+                    "value": non_empty_string
+                }
+            }
+        }
+    },
+    "edit": {
+        "name": "metadata:edit",
+        "type": "object",
+        "required": ["metadata"],
+        "properties": {
+            "metadata": {
+                "key": non_empty_string,
+                "value": non_empty_string
+            }
+        }
+    }
+}

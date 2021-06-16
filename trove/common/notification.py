@@ -860,18 +860,7 @@ class DBaaSMetadataCreate(DBaaSAPINotification):
 
     @abc.abstractmethod
     def required_end_traits(self):
-        return ['resource_id']
-
-
-class DBaaSResourceMetadatasDelete(DBaaSAPINotification):
-
-    @abc.abstractmethod
-    def event_type(self):
-        return 'resource_metadata_delete'
-
-    @abc.abstractmethod
-    def required_start_traits(self):
-        return ['resource_id']
+        return ['resource_type', 'resource_id', 'key']
 
 
 class DBaaSMetadataDelete(DBaaSAPINotification):
@@ -882,7 +871,18 @@ class DBaaSMetadataDelete(DBaaSAPINotification):
 
     @abc.abstractmethod
     def required_start_traits(self):
-        return ['id']
+        return ['resource_type', 'resource_id', 'key']
+
+
+class DBaaSMetadataEdit(DBaaSAPINotification):
+
+    @abc.abstractmethod
+    def event_type(self):
+        return 'metadata_edit'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return ['resource_type', 'resource_id', 'key']
 
 
 class DBaaSMetadataUpdate(DBaaSAPINotification):
@@ -893,4 +893,4 @@ class DBaaSMetadataUpdate(DBaaSAPINotification):
 
     @abc.abstractmethod
     def required_start_traits(self):
-        return ['id']
+        return ['resource_type', 'resource_id']

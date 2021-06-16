@@ -16,9 +16,19 @@ from trove.common.policies import base
 
 rules = [
     policy.DocumentedRuleDefault(
+        name='metadata:index',
+        check_str='rule:admin_or_owner',
+        description='List All Metadata.',
+        operations=[
+            {
+                'path': base.PATH_METADATAS,
+                'method': 'GET'
+            }
+        ]),
+    policy.DocumentedRuleDefault(
         name='metadata:create',
         check_str='rule:admin_or_owner',
-        description='Create a metadata.',
+        description='Create or Update Metadata Items.',
         operations=[
             {
                 'path': base.PATH_METADATAS,
@@ -26,9 +36,29 @@ rules = [
             }
         ]),
     policy.DocumentedRuleDefault(
+        name='metadata:update',
+        check_str='rule:admin_or_owner',
+        description='Replace Metadata Items.',
+        operations=[
+            {
+                'path': base.PATH_METADATAS,
+                'method': 'PUT'
+            }
+        ]),
+    policy.DocumentedRuleDefault(
+        name='metadata:show',
+        check_str='rule:admin_or_owner',
+        description='Show Metadata Item Details.',
+        operations=[
+            {
+                'path': base.PATH_METADATA,
+                'method': 'GET'
+            }
+        ]),
+    policy.DocumentedRuleDefault(
         name='metadata:delete',
         check_str='rule:admin_or_owner',
-        description='Delete a metadata.',
+        description='Delete Metadata Item.',
         operations=[
             {
                 'path': base.PATH_METADATA,
@@ -36,33 +66,13 @@ rules = [
             }
         ]),
     policy.DocumentedRuleDefault(
-        name='metadata:index',
+        name='metadata:edit',
         check_str='rule:admin_or_owner',
-        description='List all metadatas.',
-        operations=[
-            {
-                'path': base.PATH_METADATAS,
-                'method': 'GET'
-            }
-        ]),
-    policy.DocumentedRuleDefault(
-        name='metadata:index:all_projects',
-        check_str='role:admin',
-        description='List metadatas for all the projects.',
-        operations=[
-            {
-                'path': base.PATH_METADATAS,
-                'method': 'GET'
-            }
-        ]),
-    policy.DocumentedRuleDefault(
-        name='metadata:show',
-        check_str='role:admin',
-        description='Get a metadata.',
+        description='Create Or Update Metadata Item.',
         operations=[
             {
                 'path': base.PATH_METADATA,
-                'method': 'GET'
+                'method': 'PUT'
             }
         ]),
 ]

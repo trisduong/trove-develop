@@ -36,26 +36,39 @@ CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
-class DBMetadata(DatabaseModelBase):
-    """A table for metadata records."""
-    _data_fields = ['id', 'resource_type', 'resource_id', 'tenant_id',
-                    'key', 'value', 'created', 'deleted',
-                    'deleted_at', 'updated']
-    _table_name = 'metadata'
-
-
-def persisted_models():
-        return {'metadata': DBMetadata}
-
-
 class Metadata(object):
+
+    @classmethod
+    def list(cls, context, resource_type, resource_id):
+        query = DBMetadata.query()
+        filters = [
+            DBMetadata.deleted == 0,
+            DBMetadata.resource_id == resource_id,
+            DBMetadata.resource_type == resource_type
+        ]
+
+        query = query.filter(*filters)
+        return query
+
+    @classmethod
+    def get(cls, context, resource_type, resource_id, key):
+        query = DBMetadata.query()
+        filters = [
+            DBMetadata.deleted == 0,
+            DBMetadata.resource_id == resource_id,
+            DBMetadata.resource_type == resource_type,
+            DBMetadata.key == key
+        ]
+
+        query = query.filter(*filters)
+        return query
 
     @classmethod
     def create(cls, context, resource_type, resource_id, key, value):
         """
         create db record for metadata
         :param cls:
-        :param context: tenant_id included
+        :param context: project_id included
         :param resource_type:
         :param resource_id:
         :param key:
@@ -81,152 +94,62 @@ class Metadata(object):
         return db_info
 
     @classmethod
-    def get_by_id(cls, context, id, deleted=False):
-        """
-        get the metadata for that id
-        :param cls:
-        :param context:
-        :param id:
-        :param deleted: Return deleted
-        :return:
-        """
-        try:
-            query = DBMetadata.find_by(context=context,
-                                       id=id,
-                                       deleted=deleted)
-            return cls._paginate(context, query)
-        except exception.MetadataNotFound:
-            raise exception.MetadataNotFound(id=id)
-
-    @classmethod
-    def get_by_resource_id(cls, context, resource_id, deleted=False):
-        """
-        get the metadata for that id
-        :param cls:
-        :param context:
-        :param resource_id:
-        :param deleted: Return deleted
-        :return:
-        """
-        try:
-            query = DBMetadata.find_by(context=context,
-                                       resource_id=resource_id,
-                                       deleted=deleted)
-            return cls._paginate(context, query)
-        except exception.MetadataNotFound:
-            raise exception.MetadataNotFound(resource_id=resource_id)
-
-    @classmethod
-    def _paginate(cls, context, query):
-        """Paginate the results of the base query.
-        We use limit/offset as the results need to be ordered by date
-        and not the primary key.
-        """
-        marker = int(context.marker or 0)
-        limit = int(context.limit or CONF.backups_page_size)
-        # order by 'updated DESC' to show the most recent backups first
-        query = query.order_by(desc(DBMetadata.updated))
-        # Apply limit/offset
-        query = query.limit(limit)
-        query = query.offset(marker)
-        # check if we need to send a marker for the next page
-        if query.count() < limit:
-            marker = None
-        else:
-            marker += limit
-        return query.all(), marker
-
-    @classmethod
-    def list(cls, context, project_id=None, resource_type=None, resource_id=None,
-             all_projects=None):
-        query = DBMetadata.query()
-        filters = [DBMetadata.deleted == 0]
-
-        if project_id:
-            filters.append(DBMetadata.tenant_id == project_id)
-        elif not all_projects:
-            filters.append(DBMetadata.tenant_id == context.project_id)
-
-        if resource_id:
-            filters.append(DBMetadata.resource_id == resource_id)
-
-        if resource_type:
-            filters.append(DBMetadata.resource_type == resource_type)
-
-        query = query.filter(*filters)
-        return cls._paginate(context, query)
-
-    @classmethod
-    def list_for_resource_id(cls, context, resource_id):
-        """
-        list all live Backups associated with given instance
-        :param cls:
-        :param context:
-        :param resource_id:
-        :return:
-        """
-        query = DBMetadata.query()
-        if context.is_admin:
-            query = query.filter_by(resource_id=resource_id,
-                                    deleted=False)
-        else:
-            query = query.filter_by(resource_id=resource_id,
-                                    tenant_id=context.project_id,
-                                    deleted=False)
-        return cls._paginate(context, query)
-
-    @classmethod
-    def delete(cls, context, id):
+    def delete(cls, context, resource_type, resource_id, key):
         """
         update Metadata table on deleted flag for given Metadata
         :param cls:
         :param context: context containing the tenant id and token
-        :param id: id
-        :return:
-        """
-
-        query = DBMetadata.query()
-        query = query.filter_by(id=id, deleted=False)
-
-        def _delete_resources():
-            query.delete()
-
-        return _delete_resources
-
-    @classmethod
-    def delete_resource_metadatas(cls, context, resource_id):
-        """
-        update Metadata table on deleted flag for given Metadata
-        :param cls:
-        :param context: context containing the tenant id and token
+        :param resource_type: resource_type
         :param resource_id: resource_id
+        :param key: key
+
         :return:
         """
 
         query = DBMetadata.query()
-        query = query.filter_by(resource_id=resource_id, deleted=False)
+        query = query.filter_by(
+            resource_type=resource_type,
+            resource_id=resource_id,
+            key=key,
+            deleted=False
+        )
+        query.delete()
 
-        def _delete_resources():
-            query.delete()
-
-        return _delete_resources
+        return
 
     @classmethod
-    def edit(cls, context, id, data):
+    def edit(cls, context, resource_type, resource_id, key, value):
         """
         update Metadata table on deleted flag for given Metadata
         :param cls:
         :param context: context containing the tenant id and token
-        :param id: id
-        :param data: data
+        :param resource_type: resource_type
+        :param resource_id: resource_id
+        :param key: key
+        :param value: value
+
         :return:
         """
 
         query = DBMetadata.query()
-        query = query.filter_by(id=id, deleted=False)
+        query = query.filter_by(
+            resource_type=resource_type,
+            resource_id=resource_id,
+            key=key,
+            deleted=False
+        )
 
-        def _update_resources():
-            query.update(data)
+        metadata = query.update(value)
 
-        return _update_resources
+        return metadata
 
+
+class DBMetadata(DatabaseModelBase):
+    """A table for metadata records."""
+    _data_fields = ['id', 'resource_type', 'resource_id', 'project_id', 'key',
+                    'value', 'created', 'deleted', 'deleted_at', 'updated']
+    _table_name = 'metadata'
+
+
+def persisted_models():
+    return {'metadata': DBMetadata}

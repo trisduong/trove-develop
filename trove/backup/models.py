@@ -28,6 +28,7 @@ from trove.common import swift
 from trove.common import utils
 from trove.common.i18n import _
 from trove.datastore import models as datastore_models
+from trove.metadata import models as metadata_models
 from trove.db.models import DatabaseModelBase
 from trove.quota.quota import run_with_quotas
 from trove.taskmanager import api

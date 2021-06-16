@@ -22,7 +22,7 @@ class MetadataView(object):
     def data(self):
         import pdb; pdb.set_trace()
         result = {
-            "metadata": {""}
+            "metadata": {self.metadata['key']: self.metadata['value']}
         }
         return result
 
@@ -37,4 +37,4 @@ class MetadataViews(object):
 
         for metadata in self.metadatas:
             metadatas.append(MetadataView(metadata).data()["metadata"])
-        return {"metadata": metadatas}
+        return {"metadatas": metadatas}

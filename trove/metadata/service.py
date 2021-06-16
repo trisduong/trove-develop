@@ -1,5 +1,5 @@
-# Copyright 2013 OpenStack Foundation
-# Copyright 2013 Hewlett-Packard Development Company, L.P.
+# Copyright 2021 OpenStack Foundation
+# Copyright 2021 VCCorp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,13 +14,11 @@
 #    under the License.
 
 from oslo_log import log as logging
-from oslo_utils import strutils
 
 from trove.metadata import views
 from trove.metadata.models import Metadata
 from trove.common import apischema
 from trove.common import notification
-from trove.common import pagination
 from trove.common import policy
 from trove.common import wsgi
 from trove.common.notification import StartNotification
@@ -32,55 +30,49 @@ class MetadataController(wsgi.Controller):
     """
     Controller for accessing metadata in the OpenStack API.
     """
+    schemas = apischema.metadata
 
-    def index(self, req, tenant_id):
+    def index(self, req, tenant_id, resource_type, resource_id):
         """
-        Return all metadata information for a tenant ID.
+        List All Metadata.
         """
-        LOG.debug("Listing metadata for tenant %s", tenant_id)
-        resource_type = req.GET.get('resource_type')
-        resource_id = req.GET.get('resource_id')
-        project_id = req.GET.get('project_id')
-        all_projects = strutils.bool_from_string(req.GET.get('all_projects'))
+        LOG.debug("Listing all metadata for tenant %s", tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
 
-        if project_id or all_projects:
-            policy.authorize_on_tenant(context, 'metadata:index:all_projects')
-        else:
-            policy.authorize_on_tenant(context, 'metadata:index')
+        policy.authorize_on_tenant(context, 'metadata:index')
 
-        metadatas, marker = Metadata.list(
+        metadatas = Metadata.list(
             context,
-            project_id=project_id,
+            resource_type=resource_type,
+            resource_id=resource_id
+        )
+
+        return wsgi.Result(views.MetadataViews(metadatas), 200)
+
+    def show(self, req, tenant_id, resource_type, resource_id, key):
+        """Show Metadata Item Details."""
+        LOG.debug("Showing metadata item details for tenant %(tenant_id)s "
+                  "Resource: '%(resource_type)s with ID: %(resource_id)s'",
+                  {'tenant_id': tenant_id, 'resource_type': resource_type,
+                   'resource_id': resource_id})
+        context = req.environ[wsgi.CONTEXT_KEY]
+        metadata = Metadata.get(
+            context,
             resource_type=resource_type,
             resource_id=resource_id,
-            all_projects=all_projects
+            key=key
         )
-        view = views.MetadataViews(metadatas)
-        paged = pagination.SimplePaginatedDataView(req.url, 'metadatas', view,
-                                                   marker)
-        return wsgi.Result(paged.data(), 200)
-
-    def show(self, req, tenant_id, id):
-        """Return metadata by key."""
-        LOG.debug("Showing a metadata for tenant %(tenant_id)s ID: "
-                  "'%(id)s'",
-                  {'tenant_id': tenant_id, 'id': id})
-        context = req.environ[wsgi.CONTEXT_KEY]
-        metadata = Metadata.get_by_id(context, id)
         policy.authorize_on_target(context, 'metadata:show',
-                                   {'tenant': metadata.tenant_id})
+                                   {'tenant': metadata['project_id']})
         return wsgi.Result(views.MetadataView(metadata).data(), 200)
 
-    def create(self, req, body, tenant_id):
-        LOG.info("Creating a metadata for tenant %s", tenant_id)
+    def create(self, req, body, tenant_id, resource_type, resource_id):
+        LOG.info("Creating metadata items for tenant %s", tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         policy.authorize_on_tenant(context, 'metadata:create')
         data = body['metadata']
         key = data.get('key')
         value = data.get('value')
-        resource_type = data.get('resource_type')
-        resource_id = data.get('resource_id')
 
         context.notification = notification.DBaaSMetadataCreate(
             context, request=req)
@@ -88,58 +80,99 @@ class MetadataController(wsgi.Controller):
         with StartNotification(context, key=key, value=value,
                                resource_type=resource_type,
                                resource_id=resource_id):
-            backup = Metadata.create(
+            metadata = Metadata.create(
                 context, resource_type=resource_type,
                 resource_id=resource_id, key=key,
                 value=value
             )
 
-        return wsgi.Result(views.MetadataView(backup).data(), 202)
+        return wsgi.Result(views.MetadataView(metadata).data(), 202)
 
-    def delete(self, req, tenant_id, id):
-        """Delete a single metadata."""
-        LOG.info('Deleting metadata for tenant %(tenant_id)s '
-                 'ID: %(id)s',
-                 {'tenant_id': tenant_id, 'id': id})
+    def delete(self, req, tenant_id, resource_type, resource_id, key):
+        """Delete Metadata Item."""
+        LOG.info("Deleting metadata item for tenant %(tenant_id)s Key: %(key)s"
+                 " in Resource: '%(resource_type)s with ID: %(resource_id)s'",
+                 {'tenant_id': tenant_id, 'key': key,
+                  'resource_type': resource_type, 'resource_id': resource_id})
+
         context = req.environ[wsgi.CONTEXT_KEY]
-        metadata = Metadata.get_by_id(context, id)
+        metadata = Metadata.get(
+            context,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            key=key
+        )
         policy.authorize_on_target(context, 'metadata:delete',
-                                   {'tenant': metadata.tenant_id})
+                                   {'tenant': metadata['project_id']})
         context.notification = notification.DBaaSMetadataDelete(context,
                                                                 request=req)
-        with StartNotification(context, id=id):
-            Metadata.delete(context, id)
+        with StartNotification(context, key=key, resource_type=resource_type,
+                               resource_id=resource_id):
+            Metadata.delete(context, resource_type, resource_id, key)
         return wsgi.Result(None, 202)
 
-    def delete_resource_metadatas(self, req, tenant_id, resource_id):
-        """Delete metadatas for a resource."""
-        LOG.info('Deleting metadata for tenant %(tenant_id)s '
-                 'resource_id: %(resource_id)s',
-                 {'tenant_id': tenant_id, 'resource_id': resource_id})
+    def edit(self, req, body, tenant_id, resource_type, resource_id, key):
+        LOG.info("Update metadata for tenant %(tenant_id)s Key: %(key)s"
+                 " in Resource: '%(resource_type)s with ID: %(resource_id)s'",
+                 {'tenant_id': tenant_id, 'resource_type': resource_type,
+                  'resource_id': resource_id, 'key': key})
         context = req.environ[wsgi.CONTEXT_KEY]
-        metadatas = Metadata.get_by_resource_id(context, resource_id)
-        for metadata in metadatas:
-            policy.authorize_on_target(context, 'metadata:delete',
-                                       {'tenant': metadata.tenant_id})
-        context.notification = notification.DBaaSResourceMetadatasDelete(
-            context,
-            request=req
-        )
-        with StartNotification(context, resource_id=resource_id):
-            Metadata.delete_resource_metadatas(context, resource_id)
-        return wsgi.Result(None, 202)
-
-    def edit(self, req, body, tenant_id, id):
-        LOG.info('Update metadata for tenant %(tenant_id)s '
-                 'ID: %(id)s',
-                 {'tenant_id': tenant_id, 'id': id})
-        context = req.environ[wsgi.CONTEXT_KEY]
-        metadata = Metadata.get_by_id(context, id)
-        policy.authorize_on_target(context, 'metadata:update',
-                                   {'tenant': metadata.tenant_id})
+        metadata = Metadata.get(context, resource_type, resource_id, key)
+        policy.authorize_on_target(context, 'metadata:edit',
+                                   {'tenant': metadata['project_id']})
         data = body['metadata']
+        value = data[key]
+        context.notification = notification.DBaaSMetadataEdit(context,
+                                                              request=req)
+        with StartNotification(context, resource_type=resource_type,
+                               resource_id=resource_id, key=key):
+            metadata = Metadata.edit(
+                context, resource_type, resource_id,
+                key, value
+            )
+
+        return wsgi.Result(views.MetadataView(metadata).data(), 202)
+
+    def update(self, req, body, tenant_id, resource_type, resource_id):
+        LOG.info("Update metadata for tenant %(tenant_id)s in Resource: "
+                 "'%(resource_type)s with ID: %(resource_id)s'",
+                 {'tenant_id': tenant_id, 'resource_type': resource_type,
+                  'resource_id': resource_id})
+        context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'metadata:update')
+        data = body['metadata']
+        metadatas = []
         context.notification = notification.DBaaSMetadataUpdate(context,
                                                                 request=req)
-        with StartNotification(context, id=id):
-            Metadata.edit(context, id, data)
-        return wsgi.Result(None, 202)
+        with StartNotification(context, resource_type=resource_type,
+                               resource_id=resource_id):
+            for key, value in data.items():
+                metadata = Metadata.get(
+                    context, resource_type, resource_id, key
+                )
+                if metadata:
+                    policy.authorize_on_target(
+                        context, 'metadata:update',
+                        {'tenant': metadata['project_id']}
+                    )
+
+                    metadata = Metadata.edit(
+                        context, resource_type, resource_id,
+                        key, value
+                    )
+                else:
+                    context.notification = notification.DBaaSMetadataCreate(
+                        context, request=req)
+
+                    with StartNotification(context, key=key, value=value,
+                                           resource_type=resource_type,
+                                           resource_id=resource_id):
+                        metadata = Metadata.create(
+                            context, resource_type=resource_type,
+                            resource_id=resource_id, key=key,
+                            value=value
+                        )
+
+                metadatas.append(metadata)
+
+        return wsgi.Result(views.MetadataViews(metadatas).data(), 202)
