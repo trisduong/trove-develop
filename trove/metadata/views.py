@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
+
 
 class MetadataView(object):
 
@@ -20,9 +22,14 @@ class MetadataView(object):
         self.metadata = metadata
 
     def data(self):
-        import pdb; pdb.set_trace()
         result = {
-            "metadata": {self.metadata['key']: self.metadata['value']}
+            "metadata": {
+                "id": self.metadata.id,
+                "resource_id": self.metadata.resource_id,
+                "resource_type": self.metadata.resource_type,
+                "project_id": self.metadata.project_id,
+                self.metadata.key: json.loads(self.metadata.value)
+            }
         }
         return result
 
@@ -33,8 +40,7 @@ class MetadataViews(object):
         self.metadatas = metadatas
 
     def data(self):
-        metadatas = []
-
+        list_metadata = []
         for metadata in self.metadatas:
-            metadatas.append(MetadataView(metadata).data()["metadata"])
-        return {"metadatas": metadatas}
+            list_metadata.append(MetadataView(metadata).data()["metadata"])
+        return {"metadatas": list_metadata}

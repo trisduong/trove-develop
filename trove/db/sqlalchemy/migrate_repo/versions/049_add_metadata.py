@@ -41,8 +41,8 @@ metadata = Table(
     Column('deleted_at', DateTime()),
     Column('deleted', Boolean()),
     UniqueConstraint(
-        'project_id', 'resource_id',
-        name='UQ_metadata_project_id_resource_id'
+        'project_id', 'resource_id', 'key',
+        name='UQ_metadata_project_id_resource_id_key'
     ),
     Index("metadata_project_id_resource_id", "project_id", "resource_id"),
 )
