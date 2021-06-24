@@ -255,6 +255,7 @@ class Cluster(object):
     @property
     def metadata(self):
         return metadata_models.Metadata.list(
+            project_id=self.context.project_id,
             resource_type='clusters',
             resource_id=self.id,
             exclude=True

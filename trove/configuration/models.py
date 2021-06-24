@@ -255,6 +255,7 @@ class DBConfiguration(dbmodels.DatabaseModelBase):
     @property
     def metadata(self):
         return metadata_models.Metadata.list(
+            project_id=self.tenant_id,
             resource_type='configurations',
             resource_id=self.id,
             exclude=True

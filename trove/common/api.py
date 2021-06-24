@@ -314,6 +314,10 @@ class API(wsgi.Router):
     def _metadata_router(self, mapper):
         metadata_resource = MetadataController().create_resource()
         path = '/{tenant_id}/{resource_type}/{resource_id}/metadata'
+        mapper.connect('/{tenant_id}/metadatas',
+                       controller=metadata_resource,
+                       action='list',
+                       conditions={'method': ['GET']})
         mapper.connect(path,
                        controller=metadata_resource,
                        action='index',

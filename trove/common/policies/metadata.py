@@ -18,7 +18,27 @@ rules = [
     policy.DocumentedRuleDefault(
         name='metadata:index',
         check_str='rule:admin_or_owner',
-        description='List All Metadata.',
+        description='List All Metadata In Resource.',
+        operations=[
+            {
+                'path': base.PATH_RESOURCE_METADATAS,
+                'method': 'GET'
+            }
+        ]),
+    policy.DocumentedRuleDefault(
+        name='metadata:list:all_projects',
+        check_str='role:admin',
+        description='List metadatas for all the projects.',
+        operations=[
+            {
+                'path': base.PATH_METADATAS,
+                'method': 'GET'
+            }
+        ]),
+    policy.DocumentedRuleDefault(
+        name='metadata:list',
+        check_str='rule:admin_or_owner',
+        description='List All Metadata In Tenant.',
         operations=[
             {
                 'path': base.PATH_METADATAS,
@@ -31,7 +51,7 @@ rules = [
         description='Create or Update Metadata Items.',
         operations=[
             {
-                'path': base.PATH_METADATAS,
+                'path': base.PATH_RESOURCE_METADATAS,
                 'method': 'POST'
             }
         ]),
@@ -41,7 +61,7 @@ rules = [
         description='Replace Metadata Items.',
         operations=[
             {
-                'path': base.PATH_METADATAS,
+                'path': base.PATH_RESOURCE_METADATAS,
                 'method': 'PUT'
             }
         ]),
@@ -51,7 +71,7 @@ rules = [
         description='Show Metadata Item Details.',
         operations=[
             {
-                'path': base.PATH_METADATA,
+                'path': base.PATH_RESOURCE_METADATA,
                 'method': 'GET'
             }
         ]),
@@ -61,7 +81,7 @@ rules = [
         description='Delete Metadata Item.',
         operations=[
             {
-                'path': base.PATH_METADATA,
+                'path': base.PATH_RESOURCE_METADATA,
                 'method': 'DELETE'
             }
         ]),
@@ -71,7 +91,7 @@ rules = [
         description='Create Or Update Metadata Item.',
         operations=[
             {
-                'path': base.PATH_METADATA,
+                'path': base.PATH_RESOURCE_METADATA,
                 'method': 'PUT'
             }
         ]),
