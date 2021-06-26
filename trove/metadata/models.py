@@ -1,4 +1,4 @@
-# Copyright [2013] Hewlett-Packard Development Company, L.P.
+# Copyright 2021 Bizflycloud.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 from oslo_log import log as logging
 import json
 
+from sqlalchemy import desc
+
 from trove.common import cfg
 from trove.common import exception
 from trove.db.models import DatabaseModelBase
@@ -28,41 +30,56 @@ LOG = logging.getLogger(__name__)
 class Metadata(object):
 
     @classmethod
-    def list(cls, resource_type, resource_id, exclude=False):
+    def list(cls, project_id, context=None, resource_type=None,
+             resource_id=None, key=None, value=None, all_projects=None,
+             exclude=False):
         """
         List All Metadata Records.
         :param cls:
+        :param project_id: tenant_id
+        :param context:
         :param resource_type: TYPE of resource
         :param resource_id: ID of resource
+        :param key: ID of resource
+        :param value: ID of resource
+        :param all_projects: option
         :param exclude: exclude
 
         :return:
         """
 
         query = DBMetadata.query()
-        filters = [
-            DBMetadata.deleted == 0,
-            DBMetadata.resource_id == resource_id,
-            DBMetadata.resource_type == resource_type
-        ]
+        filters = [DBMetadata.deleted == 0]
+
+        if not all_projects:
+            filters.append(DBMetadata.project_id == project_id)
+        if resource_id:
+            filters.append(DBMetadata.resource_id == resource_id)
+        if resource_type:
+            filters.append(DBMetadata.resource_type == resource_type)
+        if key:
+            filters.append(DBMetadata.key == key)
+        if value:
+            filters.append(DBMetadata.value == value)
 
         query = query.filter(*filters)
-        metadatas = query.all()
 
         if exclude:
             dict_metadata = {}
+            metadatas = query.all()
             for metadata in metadatas:
                 dict_metadata.update(
                     {metadata.key: json.loads(metadata.value)})
             return dict_metadata
 
-        return metadatas
+        return cls._paginate(context, query)
 
     @classmethod
-    def get(cls, resource_type, resource_id, key):
+    def get(cls, project_id, resource_type, resource_id, key):
         """
         Show Metadata Item Details Records.
         :param cls:
+        :param project_id: tenant_id
         :param resource_type: TYPE of resource
         :param resource_id: ID of resource
         :param key: metadata key
@@ -73,6 +90,7 @@ class Metadata(object):
         try:
             return DBMetadata.find_by(
                 deleted=False,
+                project_id=project_id,
                 resource_id=resource_id,
                 resource_type=resource_type,
                 key=key)
@@ -82,6 +100,27 @@ class Metadata(object):
                 key=key,
                 resource_type=resource_type,
                 resource_id=resource_id)
+
+    @classmethod
+    def _paginate(cls, context, query):
+        """
+        Paginate the results of the base query.
+        We use limit/offset as the results need to be ordered by date
+        and not the primary key.
+        """
+        marker = int(context.marker or 0)
+        limit = int(context.limit or CONF.metadatas_page_size)
+        # order by 'updated DESC' to show the most recent metadatas first
+        query = query.order_by(desc(DBMetadata.updated))
+        # Apply limit/offset
+        query = query.limit(limit)
+        query = query.offset(marker)
+        # check if we need to send a marker for the next page
+        if query.count() < limit:
+            marker = None
+        else:
+            marker += limit
+        return query.all(), marker
 
     @classmethod
     def create(cls, project_id, resource_type, resource_id, data):
@@ -101,6 +140,7 @@ class Metadata(object):
         for key, value in data.items():
             try:
                 cls.get(
+                    project_id=project_id,
                     resource_type=resource_type,
                     resource_id=resource_id,
                     key=key)
@@ -161,6 +201,7 @@ class Metadata(object):
 
         try:
             cls.get(
+                project_id=project_id,
                 resource_type=resource_type,
                 resource_id=resource_id,
                 key=key

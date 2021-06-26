@@ -14,7 +14,6 @@
 
 """Model classes that form the core of snapshots functionality."""
 
-import json
 from oslo_log import log as logging
 from requests.exceptions import ConnectionError
 from sqlalchemy import desc
@@ -466,6 +465,7 @@ class DBBackup(DatabaseModelBase):
     @property
     def metadata(self):
         return metadata_models.Metadata.list(
+            project_id=self.tenant_id,
             resource_type='backups',
             resource_id=self.id,
             exclude=True

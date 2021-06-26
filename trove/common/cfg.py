@@ -518,6 +518,8 @@ common_opts = [
         'enable_volume_az', default=False,
         help='If true create the volume in the same availability-zone as the '
              'instance'),
+    cfg.IntOpt('metadatas_page_size', default=20,
+               help='Page size for listing metadatas.')
 ]
 
 

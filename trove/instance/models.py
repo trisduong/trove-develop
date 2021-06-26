@@ -222,6 +222,7 @@ class SimpleInstance(object):
     @property
     def metadata(self):
         return metadata_models.Metadata.list(
+            project_id=self.context.project_id,
             resource_type='instances',
             resource_id=self.db_info.id,
             exclude=True
@@ -629,6 +630,7 @@ def update_service_status(task_status, service_status, ins_id):
 
 def load_metadata_info(db_info):
     db_info.metadata = metadata_models.Metadata.list(
+        project_id=db_info.tenant_id,
         resource_type='instances',
         resource_id=db_info.id,
         exclude=True

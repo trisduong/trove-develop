@@ -50,8 +50,9 @@ PATH_LIMITS = PATH_BASE + '/limits'
 PATH_MODULES = PATH_BASE + '/modules'
 PATH_MODULE = PATH_MODULES + '/{module}'
 
-PATH_METADATAS = PATH_BASE + '/{resource_type}/{resource_id}/metadata'
-PATH_METADATA = PATH_METADATAS + '/{key}'
+PATH_METADATAS = '/metadatas'
+PATH_RESOURCE_METADATAS = PATH_BASE + '/{resource_type}/{resource_id}/metadata'
+PATH_RESOURCE_METADATA = PATH_RESOURCE_METADATAS + '/{key}'
 
 rules = [
     policy.RuleDefault(

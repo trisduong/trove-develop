@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 from oslo_log import log as logging
 
 from neutronclient.common import exceptions as neutron_exceptions
@@ -256,6 +255,7 @@ class Cluster(object):
     @property
     def metadata(self):
         return metadata_models.Metadata.list(
+            project_id=self.context.project_id,
             resource_type='clusters',
             resource_id=self.id,
             exclude=True
